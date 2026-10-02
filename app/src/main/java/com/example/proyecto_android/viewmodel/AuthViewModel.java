@@ -1,5 +1,7 @@
 package com.example.proyecto_android.viewmodel;
 
+import android.util.Patterns;
+
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
@@ -18,31 +20,70 @@ public class AuthViewModel extends ViewModel {
     }
 
     public void register(String email, String password) {
-        authRepository.register(email, password, new AuthRepository.AuthCallback() {
-            @Override
-            public void onSuccess() {
-                successMessage.setValue("Usuario registrado correctamente");
-            }
 
-            @Override
-            public void onError(String message) {
-                errorMessage.setValue(message);
-            }
-        });
+        if (!validateCredentials(email, password)) {
+            return;
+        }
+
+        authRepository.register(email.trim(), password,
+                new AuthRepository.AuthCallback() {
+
+                    @Override
+                    public void onSuccess() {
+                        successMessage.setValue("Usuario registrado correctamente");
+                    }
+
+                    @Override
+                    public void onError(String message) {
+                        errorMessage.setValue(message);
+                    }
+                });
     }
 
     public void login(String email, String password) {
-        authRepository.login(email, password, new AuthRepository.AuthCallback() {
-            @Override
-            public void onSuccess() {
-                successMessage.setValue("Inicio de sesión exitoso");
-            }
 
-            @Override
-            public void onError(String message) {
-                errorMessage.setValue(message);
-            }
-        });
+        if (!validateCredentials(email, password)) {
+            return;
+        }
+
+        authRepository.login(email.trim(), password,
+                new AuthRepository.AuthCallback() {
+
+                    @Override
+                    public void onSuccess() {
+                        successMessage.setValue("Inicio de sesión exitoso");
+                    }
+
+                    @Override
+                    public void onError(String message) {
+                        errorMessage.setValue(message);
+                    }
+                });
+    }
+
+    private boolean validateCredentials(String email, String password) {
+
+        if (email == null || email.trim().isEmpty()) {
+            errorMessage.setValue("El correo electrónico es obligatorio");
+            return false;
+        }
+
+        if (!Patterns.EMAIL_ADDRESS.matcher(email.trim()).matches()) {
+            errorMessage.setValue("Ingresa un correo electrónico válido");
+            return false;
+        }
+
+        if (password == null || password.isEmpty()) {
+            errorMessage.setValue("La contraseña es obligatoria");
+            return false;
+        }
+
+        if (password.length() < 6) {
+            errorMessage.setValue("La contraseña debe tener al menos 6 caracteres");
+            return false;
+        }
+
+        return true;
     }
 
     public void logout() {
