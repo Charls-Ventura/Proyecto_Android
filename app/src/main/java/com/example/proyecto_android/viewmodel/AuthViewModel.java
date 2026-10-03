@@ -19,25 +19,36 @@ public class AuthViewModel extends ViewModel {
         authRepository = new AuthRepository();
     }
 
-    public void register(String email, String password) {
+    public void register(String name, String email, String password) {
+
+        if (name == null || name.trim().isEmpty()) {
+            errorMessage.setValue("El nombre es obligatorio");
+            return;
+        }
 
         if (!validateCredentials(email, password)) {
             return;
         }
 
-        authRepository.register(email.trim(), password,
+        authRepository.register(
+                name.trim(),
+                email.trim(),
+                password,
                 new AuthRepository.AuthCallback() {
 
                     @Override
                     public void onSuccess() {
-                        successMessage.setValue("Usuario registrado correctamente");
+                        successMessage.setValue(
+                                "Usuario registrado correctamente"
+                        );
                     }
 
                     @Override
                     public void onError(String message) {
                         errorMessage.setValue(message);
                     }
-                });
+                }
+        );
     }
 
     public void login(String email, String password) {
