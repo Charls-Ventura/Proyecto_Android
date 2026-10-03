@@ -19,7 +19,6 @@ public class UsersActivity extends AppCompatActivity {
 
     private AuthViewModel authViewModel;
     private UserViewModel userViewModel;
-
     private UserAdapter userAdapter;
 
     @Override
@@ -30,7 +29,19 @@ public class UsersActivity extends AppCompatActivity {
         RecyclerView recyclerUsers = findViewById(R.id.recyclerUsers);
         Button btnLogout = findViewById(R.id.btnLogout);
 
-        userAdapter = new UserAdapter();
+        userAdapter = new UserAdapter(user -> {
+
+            Intent intent = new Intent(
+                    UsersActivity.this,
+                    ChatActivity.class
+            );
+
+            intent.putExtra("userId", user.getUid());
+            intent.putExtra("userName", user.getName());
+            intent.putExtra("userEmail", user.getEmail());
+
+            startActivity(intent);
+        });
 
         recyclerUsers.setLayoutManager(new LinearLayoutManager(this));
         recyclerUsers.setAdapter(userAdapter);

@@ -23,7 +23,9 @@ public class ChatActivity extends AppCompatActivity {
                 new LinearLayoutManager(this)
         );
 
+        String userId = getIntent().getStringExtra("userId");
         String userName = getIntent().getStringExtra("userName");
+        String userEmail = getIntent().getStringExtra("userEmail");
 
         if (userName != null) {
             txtChatUserName.setText(userName);
