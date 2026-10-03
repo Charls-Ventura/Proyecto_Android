@@ -6,20 +6,29 @@ import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
 
+import com.example.proyecto_android.model.User;
 import com.example.proyecto_android.repository.AuthRepository;
+import com.example.proyecto_android.repository.UserRepository;
 
 public class AuthViewModel extends ViewModel {
 
     private final AuthRepository authRepository;
+    private final UserRepository userRepository;
 
     private final MutableLiveData<String> successMessage = new MutableLiveData<>();
     private final MutableLiveData<String> errorMessage = new MutableLiveData<>();
 
     public AuthViewModel() {
         authRepository = new AuthRepository();
+        userRepository = new UserRepository();
     }
 
-    public void register(String email, String password) {
+    public void register(String name, String email, String password) {
+
+        if (name == null || name.trim().isEmpty()) {
+            errorMessage.setValue("El nombre es obligatorio");
+            return;
+        }
 
         if (!validateCredentials(email, password)) {
             return;
@@ -30,7 +39,35 @@ public class AuthViewModel extends ViewModel {
 
                     @Override
                     public void onSuccess() {
-                        successMessage.setValue("Usuario registrado correctamente");
+
+                        String uid = authRepository.getCurrentUserId();
+
+                        if (uid == null) {
+                            errorMessage.setValue("No se pudo obtener el usuario registrado");
+                            return;
+                        }
+
+                        User user = new User(
+                                uid,
+                                name.trim(),
+                                email.trim()
+                        );
+
+                        userRepository.saveUser(user,
+                                new UserRepository.UserCallback() {
+
+                                    @Override
+                                    public void onSuccess() {
+                                        successMessage.setValue(
+                                                "Usuario registrado correctamente"
+                                        );
+                                    }
+
+                                    @Override
+                                    public void onError(String message) {
+                                        errorMessage.setValue(message);
+                                    }
+                                });
                     }
 
                     @Override
@@ -79,7 +116,9 @@ public class AuthViewModel extends ViewModel {
         }
 
         if (password.length() < 6) {
-            errorMessage.setValue("La contraseña debe tener al menos 6 caracteres");
+            errorMessage.setValue(
+                    "La contraseña debe tener al menos 6 caracteres"
+            );
             return false;
         }
 

@@ -14,6 +14,7 @@ import com.example.proyecto_android.viewmodel.AuthViewModel;
 
 public class RegisterActivity extends AppCompatActivity {
 
+    private EditText editRegisterName;
     private EditText editRegisterEmail;
     private EditText editRegisterPassword;
 
@@ -24,6 +25,7 @@ public class RegisterActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_register);
 
+        editRegisterName = findViewById(R.id.editRegisterName);
         editRegisterEmail = findViewById(R.id.editRegisterEmail);
         editRegisterPassword = findViewById(R.id.editRegisterPassword);
 
@@ -33,10 +35,11 @@ public class RegisterActivity extends AppCompatActivity {
         authViewModel = new ViewModelProvider(this).get(AuthViewModel.class);
 
         btnRegister.setOnClickListener(v -> {
+            String name = editRegisterName.getText().toString();
             String email = editRegisterEmail.getText().toString();
             String password = editRegisterPassword.getText().toString();
 
-            authViewModel.register(email, password);
+            authViewModel.register(name, email, password);
         });
 
         authViewModel.getSuccessMessage().observe(this, message -> {

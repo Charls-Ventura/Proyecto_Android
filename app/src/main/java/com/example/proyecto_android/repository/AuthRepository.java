@@ -51,5 +51,15 @@ public class AuthRepository {
     public interface AuthCallback {
         void onSuccess();
         void onError(String message);
+
+
+    }
+
+    public String getCurrentUserId() {
+        if (firebaseAuth.getCurrentUser() != null) {
+            return firebaseAuth.getCurrentUser().getUid();
+        }
+
+        return null;
     }
 }
