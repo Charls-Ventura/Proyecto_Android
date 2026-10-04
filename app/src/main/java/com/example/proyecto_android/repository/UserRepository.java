@@ -44,13 +44,10 @@ public class UserRepository {
                             continue;
                         }
 
-                        if (user.getUid() == null ||
-                                user.getUid().trim().isEmpty()) {
+                        String userId = document.getId();
+                        user.setUid(userId);
 
-                            user.setUid(document.getId());
-                        }
-
-                        if (user.getUid().equals(currentUserId)) {
+                        if (userId.equals(currentUserId)) {
                             continue;
                         }
 

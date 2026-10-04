@@ -51,7 +51,6 @@ public class ChatActivity extends AppCompatActivity {
         setupViewModel();
         setupSendButton();
     }
-
     private void initializeViews() {
         recyclerMessages = findViewById(R.id.recyclerMessages);
         editTextMessage = findViewById(R.id.editTextMessage);
