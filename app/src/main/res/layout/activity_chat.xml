@@ -53,6 +53,14 @@
             android:contentDescription="Enviar mensaje"
             android:src="@android:drawable/ic_menu_send" />
 
+        <ImageButton
+            android:id="@+id/buttonImage"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_marginEnd="8dp"
+            android:contentDescription="Seleccionar imagen"
+            android:src="@android:drawable/ic_menu_gallery" />
+
     </LinearLayout>
 
 </LinearLayout>

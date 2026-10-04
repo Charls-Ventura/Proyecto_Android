@@ -128,6 +128,65 @@ public class ChatViewModel extends ViewModel{
         }
     }
 
+    public void sendImage(
+            String senderId,
+            String receiverId,
+            String imageBase64
+    ) {
+
+        if (senderId == null ||
+                senderId.trim().isEmpty()) {
+
+            errorMessage.setValue(
+                    "No se pudo identificar al usuario."
+            );
+            return;
+        }
+
+        if (receiverId == null ||
+                receiverId.trim().isEmpty()) {
+
+            errorMessage.setValue(
+                    "No se pudo identificar al destinatario."
+            );
+            return;
+        }
+
+        if (imageBase64 == null ||
+                imageBase64.trim().isEmpty()) {
+
+            errorMessage.setValue(
+                    "No se pudo procesar la imagen."
+            );
+            return;
+        }
+
+        Message message = new Message(
+                senderId,
+                receiverId,
+                "",
+                System.currentTimeMillis()
+        );
+
+        message.setImageBase64(imageBase64);
+
+        chatRepository.sendMessage(
+                message,
+                new ChatRepository.MessageCallback() {
+
+                    @Override
+                    public void onSuccess() {
+                        messageSent.setValue(true);
+                    }
+
+                    @Override
+                    public void onError(String message) {
+                        errorMessage.setValue(message);
+                    }
+                }
+        );
+    }
+
     @Override
     protected void onCleared() {
         super.onCleared();

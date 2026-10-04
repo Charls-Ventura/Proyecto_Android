@@ -7,6 +7,7 @@ public class Message {
     private String receiverId;
     private String text;
     private long timestamp;
+    private String imageBase64;
 
     public Message() {
         // Constructor vacío requerido por Firebase
@@ -61,5 +62,13 @@ public class Message {
 
     public void setTimestamp(long timestamp) {
         this.timestamp = timestamp;
+    }
+
+    public String getImageBase64() {
+        return imageBase64;
+    }
+
+    public void setImageBase64(String imageBase64) {
+        this.imageBase64 = imageBase64;
     }
 }

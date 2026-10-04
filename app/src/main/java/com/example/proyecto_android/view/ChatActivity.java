@@ -17,6 +17,18 @@ import com.google.android.material.textfield.TextInputEditText;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.net.Uri;
+import android.util.Base64;
+import android.widget.ImageButton;
+
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
+
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
+
 import java.util.ArrayList;
 
 public class ChatActivity extends AppCompatActivity {
@@ -35,11 +47,14 @@ public class ChatActivity extends AppCompatActivity {
     private String currentUserId;
     private String receiverId;
     private String receiverName;
+    private ImageButton buttonImage;
+    private ActivityResultLauncher<String> imagePickerLauncher;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_chat);
+        setupImagePicker();
 
         initializeViews();
 
@@ -50,11 +65,13 @@ public class ChatActivity extends AppCompatActivity {
         setupRecyclerView();
         setupViewModel();
         setupSendButton();
+        setupImageButton();
     }
     private void initializeViews() {
         recyclerMessages = findViewById(R.id.recyclerMessages);
         editTextMessage = findViewById(R.id.editTextMessage);
         buttonSend = findViewById(R.id.buttonSend);
+        buttonImage = findViewById(R.id.buttonImage);
         textChatTitle = findViewById(R.id.textChatTitle);
     }
 
@@ -196,5 +213,125 @@ public class ChatActivity extends AppCompatActivity {
                     text
             );
         });
+    }
+    private void setupImagePicker() {
+
+        imagePickerLauncher =
+                registerForActivityResult(
+                        new ActivityResultContracts.GetContent(),
+                        uri -> {
+
+                            if (uri != null) {
+                                processSelectedImage(uri);
+                            }
+                        }
+                );
+    }
+
+    private void setupImageButton() {
+
+        buttonImage.setOnClickListener(view -> {
+            imagePickerLauncher.launch("image/*");
+        });
+    }
+
+    private void processSelectedImage(Uri imageUri) {
+
+        try {
+
+            InputStream inputStream =
+                    getContentResolver()
+                            .openInputStream(imageUri);
+
+            Bitmap originalBitmap =
+                    BitmapFactory.decodeStream(inputStream);
+
+            if (inputStream != null) {
+                inputStream.close();
+            }
+
+            if (originalBitmap == null) {
+
+                Toast.makeText(
+                        this,
+                        "No se pudo procesar la imagen.",
+                        Toast.LENGTH_SHORT
+                ).show();
+
+                return;
+            }
+
+            Bitmap resizedBitmap =
+                    resizeBitmap(originalBitmap, 800);
+
+            ByteArrayOutputStream outputStream =
+                    new ByteArrayOutputStream();
+
+            resizedBitmap.compress(
+                    Bitmap.CompressFormat.JPEG,
+                    60,
+                    outputStream
+            );
+
+            byte[] imageBytes =
+                    outputStream.toByteArray();
+
+            String imageBase64 =
+                    Base64.encodeToString(
+                            imageBytes,
+                            Base64.NO_WRAP
+                    );
+
+            chatViewModel.sendImage(
+                    currentUserId,
+                    receiverId,
+                    imageBase64
+            );
+
+            outputStream.close();
+
+            if (resizedBitmap != originalBitmap) {
+                resizedBitmap.recycle();
+            }
+
+            originalBitmap.recycle();
+
+        } catch (Exception exception) {
+
+            Toast.makeText(
+                    this,
+                    "Error al procesar la imagen.",
+                    Toast.LENGTH_SHORT
+            ).show();
+        }
+    }
+    private Bitmap resizeBitmap(
+            Bitmap bitmap,
+            int maxSize
+    ) {
+
+        int width = bitmap.getWidth();
+        int height = bitmap.getHeight();
+
+        if (width <= maxSize &&
+                height <= maxSize) {
+
+            return bitmap;
+        }
+
+        float ratio = Math.min(
+                (float) maxSize / width,
+                (float) maxSize / height
+        );
+
+        int newWidth = Math.round(width * ratio);
+        int newHeight = Math.round(height * ratio);
+
+        return Bitmap.createScaledBitmap(
+                bitmap,
+                newWidth,
+                newHeight,
+                true
+        );
     }
 }
