@@ -6,6 +6,7 @@ import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Build;
+import android.util.Log;
 
 import androidx.core.app.NotificationCompat;
 
@@ -46,17 +47,34 @@ public class ChatNotificationManager {
 
         final boolean[] firstSnapshot = {true};
 
+        Log.d(
+                "CHAT_NOTIF",
+                "Iniciando listener global para: " + currentUserId
+        );
+
         messageListener =
                 firestore.collectionGroup("messages")
-                        .whereEqualTo(
-                                "receiverId",
-                                currentUserId
-                        )
                         .addSnapshotListener(
                                 (snapshot, error) -> {
 
-                                    if (error != null ||
-                                            snapshot == null) {
+                                    if (error != null) {
+
+                                        Log.e(
+                                                "CHAT_NOTIF",
+                                                "Error escuchando mensajes",
+                                                error
+                                        );
+
+                                        return;
+                                    }
+
+                                    if (snapshot == null) {
+
+                                        Log.w(
+                                                "CHAT_NOTIF",
+                                                "Snapshot nulo"
+                                        );
+
                                         return;
                                     }
 
@@ -70,6 +88,7 @@ public class ChatNotificationManager {
 
                                         if (change.getType() !=
                                                 DocumentChange.Type.ADDED) {
+
                                             continue;
                                         }
 
@@ -78,6 +97,21 @@ public class ChatNotificationManager {
                                                         .toObject(
                                                                 Message.class
                                                         );
+
+                                        if (message == null ||
+                                                message.getReceiverId() == null ||
+                                                !currentUserId.equals(
+                                                        message.getReceiverId()
+                                                )) {
+
+                                            continue;
+                                        }
+
+                                        Log.d(
+                                                "CHAT_NOTIF",
+                                                "Mensaje entrante detectado de: "
+                                                        + message.getSenderId()
+                                        );
 
                                         showNotification(message);
                                     }
@@ -88,42 +122,54 @@ public class ChatNotificationManager {
     public void stop() {
 
         if (messageListener != null) {
+
             messageListener.remove();
             messageListener = null;
         }
     }
 
-    private void showNotification(Message message) {
+    private void showNotification(
+            Message message
+    ) {
 
         if (message == null ||
                 message.getSenderId() == null) {
+
             return;
         }
 
         firestore.collection("users")
-                .document(message.getSenderId())
+                .document(
+                        message.getSenderId()
+                )
                 .get()
-                .addOnSuccessListener(document -> {
+                .addOnSuccessListener(
+                        document -> {
 
-                    String senderName = "Usuario";
+                            String senderName =
+                                    "Usuario";
 
-                    if (document.exists()) {
+                            if (document.exists()) {
 
-                        String name =
-                                document.getString("name");
+                                String name =
+                                        document.getString(
+                                                "name"
+                                        );
 
-                        if (name != null &&
-                                !name.trim().isEmpty()) {
+                                if (name != null &&
+                                        !name.trim()
+                                                .isEmpty()) {
 
-                            senderName = name;
+                                    senderName = name;
+                                }
+                            }
+
+                            createNotification(
+                                    message,
+                                    senderName
+                            );
                         }
-                    }
-
-                    createNotification(
-                            message,
-                            senderName
-                    );
-                });
+                );
     }
 
     private void createNotification(
@@ -133,7 +179,8 @@ public class ChatNotificationManager {
 
         createNotificationChannel();
 
-        String body = message.getText();
+        String body =
+                message.getText();
 
         if (body == null ||
                 body.trim().isEmpty()) {
@@ -143,11 +190,13 @@ public class ChatNotificationManager {
                             .trim()
                             .isEmpty()) {
 
-                body = "Te envió una imagen";
+                body =
+                        "Te envió una imagen";
 
             } else {
 
-                body = "Tienes un mensaje nuevo";
+                body =
+                        "Tienes un mensaje nuevo";
             }
         }
 
@@ -205,7 +254,9 @@ public class ChatNotificationManager {
                                 NotificationCompat.CATEGORY_MESSAGE
                         )
                         .setAutoCancel(true)
-                        .setContentIntent(pendingIntent);
+                        .setContentIntent(
+                                pendingIntent
+                        );
 
         NotificationManager manager =
                 (NotificationManager)
@@ -240,7 +291,9 @@ public class ChatNotificationManager {
                             NotificationManager.class
                     );
 
-            manager.createNotificationChannel(channel);
+            manager.createNotificationChannel(
+                    channel
+            );
         }
     }
 }
