@@ -2,7 +2,6 @@
 
 <LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical">
@@ -31,6 +30,14 @@
         android:gravity="center_vertical"
         android:padding="8dp">
 
+        <ImageButton
+            android:id="@+id/buttonImage"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_marginEnd="8dp"
+            android:contentDescription="Seleccionar imagen"
+            android:src="@android:drawable/ic_menu_gallery" />
+
         <com.google.android.material.textfield.TextInputLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
@@ -41,7 +48,8 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:hint="Escribe un mensaje"
-                android:maxLines="4" />
+                android:maxLines="4"
+                android:inputType="textCapSentences|textMultiLine" />
 
         </com.google.android.material.textfield.TextInputLayout>
 
@@ -52,14 +60,6 @@
             android:layout_marginStart="8dp"
             android:contentDescription="Enviar mensaje"
             android:src="@android:drawable/ic_menu_send" />
-
-        <ImageButton
-            android:id="@+id/buttonImage"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
-            android:layout_marginEnd="8dp"
-            android:contentDescription="Seleccionar imagen"
-            android:src="@android:drawable/ic_menu_gallery" />
 
     </LinearLayout>
 

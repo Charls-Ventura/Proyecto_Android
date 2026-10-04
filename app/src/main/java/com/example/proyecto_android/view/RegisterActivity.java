@@ -45,7 +45,11 @@ public class RegisterActivity extends AppCompatActivity {
             String password =
                     editRegisterPassword.getText().toString();
 
-            authViewModel.register(name, email, password);
+            authViewModel.register(
+                    name,
+                    email,
+                    password
+            );
         });
 
         authViewModel.getSuccessMessage().observe(this, message -> {

@@ -1,16 +1,16 @@
 package com.example.proyecto_android.view;
 
+import android.Manifest;
 import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.os.Build;
 import android.os.Bundle;
 import android.widget.Button;
 import android.widget.Toast;
-import android.Manifest;
-import android.content.pm.PackageManager;
-import android.os.Build;
 
+import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
-import androidx.appcompat.app.AppCompatActivity;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -41,6 +41,7 @@ public class UsersActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_users);
+
         requestNotificationPermission();
 
         initializeViews();
@@ -72,7 +73,6 @@ public class UsersActivity extends AppCompatActivity {
         if (currentUser == null) {
 
             goToLogin();
-
             return false;
         }
 
@@ -135,6 +135,7 @@ public class UsersActivity extends AppCompatActivity {
         usersViewModel.startListeningForUsers(
                 currentUserId
         );
+
         usersViewModel.syncFcmToken(
                 currentUserId
         );

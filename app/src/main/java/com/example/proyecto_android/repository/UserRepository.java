@@ -7,8 +7,8 @@ import com.google.firebase.firestore.ListenerRegistration;
 import com.google.firebase.firestore.SetOptions;
 import com.google.firebase.messaging.FirebaseMessaging;
 
-import java.util.Collections;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
@@ -58,29 +58,93 @@ public class UserRepository {
                     }
 
                     users.sort(
-                            Comparator.comparing(
-                                    user -> {
-                                        String name = user.getName();
+                            Comparator.comparing(user -> {
 
-                                        if (name == null) {
-                                            return "";
-                                        }
+                                String name = user.getName();
 
-                                        return name.toLowerCase();
-                                    }
-                            )
+                                if (name == null) {
+                                    return "";
+                                }
+
+                                return name.toLowerCase();
+                            })
                     );
 
                     listener.onUsersChanged(users);
                 });
     }
 
-    public interface UsersListener {
+    public void saveUser(
+            User user,
+            UserCallback callback
+    ) {
 
-        void onUsersChanged(List<User> users);
-
-        void onError(String message);
+        firestore.collection("users")
+                .document(user.getUid())
+                .set(user)
+                .addOnSuccessListener(unused ->
+                        callback.onSuccess()
+                )
+                .addOnFailureListener(exception ->
+                        callback.onError(
+                                exception.getMessage()
+                        )
+                );
     }
+
+    public void getUsers(
+            String currentUserId,
+            UsersCallback callback
+    ) {
+
+        firestore.collection("users")
+                .get()
+                .addOnSuccessListener(snapshot -> {
+
+                    List<User> users = new ArrayList<>();
+
+                    for (DocumentSnapshot document :
+                            snapshot.getDocuments()) {
+
+                        User user =
+                                document.toObject(User.class);
+
+                        if (user == null) {
+                            continue;
+                        }
+
+                        String userId = document.getId();
+                        user.setUid(userId);
+
+                        if (userId.equals(currentUserId)) {
+                            continue;
+                        }
+
+                        users.add(user);
+                    }
+
+                    users.sort(
+                            Comparator.comparing(user -> {
+
+                                String name = user.getName();
+
+                                if (name == null) {
+                                    return "";
+                                }
+
+                                return name.toLowerCase();
+                            })
+                    );
+
+                    callback.onSuccess(users);
+                })
+                .addOnFailureListener(exception ->
+                        callback.onError(
+                                exception.getMessage()
+                        )
+                );
+    }
+
     public void syncFcmToken(
             String userId,
             OperationCallback callback
@@ -88,20 +152,18 @@ public class UserRepository {
 
         FirebaseMessaging.getInstance()
                 .getToken()
-                .addOnSuccessListener(token -> {
-
-                    saveFcmToken(
-                            userId,
-                            token,
-                            callback
-                    );
-                })
-                .addOnFailureListener(exception -> {
-
-                    callback.onError(
-                            exception.getMessage()
-                    );
-                });
+                .addOnSuccessListener(token ->
+                        saveFcmToken(
+                                userId,
+                                token,
+                                callback
+                        )
+                )
+                .addOnFailureListener(exception ->
+                        callback.onError(
+                                exception.getMessage()
+                        )
+                );
     }
 
     public void saveFcmToken(
@@ -127,6 +189,27 @@ public class UserRepository {
                                 exception.getMessage()
                         )
                 );
+    }
+
+    public interface UsersListener {
+
+        void onUsersChanged(List<User> users);
+
+        void onError(String message);
+    }
+
+    public interface UserCallback {
+
+        void onSuccess();
+
+        void onError(String message);
+    }
+
+    public interface UsersCallback {
+
+        void onSuccess(List<User> users);
+
+        void onError(String message);
     }
 
     public interface OperationCallback {
