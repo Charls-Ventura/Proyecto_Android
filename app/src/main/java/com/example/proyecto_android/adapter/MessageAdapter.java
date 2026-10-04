@@ -16,6 +16,10 @@ import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.util.Base64;
+import android.widget.ImageView;
 public class MessageAdapter
         extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
@@ -125,6 +129,7 @@ public class MessageAdapter
 
         private final TextView textMessage;
         private final TextView textTime;
+        private final ImageView imageMessage;
 
         public SentMessageViewHolder(
                 @NonNull View itemView
@@ -136,11 +141,66 @@ public class MessageAdapter
 
             textTime =
                     itemView.findViewById(R.id.textTime);
+
+            imageMessage =
+                    itemView.findViewById(R.id.imageMessage);
         }
 
         public void bind(Message message) {
 
-            textMessage.setText(message.getText());
+            String text = message.getText();
+            String imageBase64 = message.getImageBase64();
+            android.util.Log.d(
+                    "IMAGE_DEBUG",
+                    "ENVIADO imageBase64 length = " +
+                            (imageBase64 == null
+                                    ? "NULL"
+                                    : imageBase64.length())
+            );
+
+            if (text != null && !text.trim().isEmpty()) {
+
+                textMessage.setVisibility(View.VISIBLE);
+                textMessage.setText(text);
+
+            } else {
+
+                textMessage.setVisibility(View.GONE);
+                textMessage.setText("");
+            }
+
+            if (imageBase64 != null &&
+                    !imageBase64.trim().isEmpty()) {
+
+                Bitmap bitmap =
+                        decodeBase64Image(imageBase64);
+                        android.util.Log.d(
+                                "IMAGE_DEBUG",
+                                "ENVIADO bitmap = " +
+                                        (bitmap == null
+                                                ? "NULL"
+                                                : bitmap.getWidth()
+                                                  + "x"
+                                                  + bitmap.getHeight())
+                        );
+
+                if (bitmap != null) {
+
+                    imageMessage.setVisibility(View.VISIBLE);
+                    imageMessage.setImageBitmap(bitmap);
+
+                } else {
+
+                    imageMessage.setVisibility(View.GONE);
+                    imageMessage.setImageDrawable(null);
+                }
+
+            } else {
+
+                imageMessage.setVisibility(View.GONE);
+                imageMessage.setImageDrawable(null);
+            }
+
             textTime.setText(
                     formatTime(message.getTimestamp())
             );
@@ -152,6 +212,7 @@ public class MessageAdapter
 
         private final TextView textMessage;
         private final TextView textTime;
+        private final ImageView imageMessage;
 
         public ReceivedMessageViewHolder(
                 @NonNull View itemView
@@ -163,14 +224,90 @@ public class MessageAdapter
 
             textTime =
                     itemView.findViewById(R.id.textTime);
+
+            imageMessage =
+                    itemView.findViewById(R.id.imageMessage);
         }
 
         public void bind(Message message) {
 
-            textMessage.setText(message.getText());
+            String text = message.getText();
+            String imageBase64 = message.getImageBase64();
+            android.util.Log.d(
+                    "IMAGE_DEBUG",
+                    "RECIBIDO imageBase64 length = " +
+                            (imageBase64 == null
+                                    ? "NULL"
+                                    : imageBase64.length())
+            );
+
+            if (text != null && !text.trim().isEmpty()) {
+
+                textMessage.setVisibility(View.VISIBLE);
+                textMessage.setText(text);
+
+            } else {
+
+                textMessage.setVisibility(View.GONE);
+                textMessage.setText("");
+            }
+
+            if (imageBase64 != null &&
+                    !imageBase64.trim().isEmpty()) {
+
+                Bitmap bitmap =
+                        decodeBase64Image(imageBase64);
+                        android.util.Log.d(
+                                "IMAGE_DEBUG",
+                                "RECIBIDO bitmap = " +
+                                        (bitmap == null
+                                                ? "NULL"
+                                                : bitmap.getWidth()
+                                                  + "x"
+                                                  + bitmap.getHeight())
+                        );
+
+                if (bitmap != null) {
+
+                    imageMessage.setVisibility(View.VISIBLE);
+                    imageMessage.setImageBitmap(bitmap);
+
+                } else {
+
+                    imageMessage.setVisibility(View.GONE);
+                    imageMessage.setImageDrawable(null);
+                }
+
+            } else {
+
+                imageMessage.setVisibility(View.GONE);
+                imageMessage.setImageDrawable(null);
+            }
+
             textTime.setText(
                     formatTime(message.getTimestamp())
             );
+        }
+    }
+    private Bitmap decodeBase64Image(String imageBase64) {
+
+        try {
+
+            byte[] imageBytes =
+                    Base64.decode(
+                            imageBase64,
+                            Base64.DEFAULT
+                    );
+
+            return BitmapFactory.decodeByteArray(
+                    imageBytes,
+                    0,
+                    imageBytes.length
+            );
+
+        } catch (Exception exception) {
+
+            return null;
         }
     }
 }
