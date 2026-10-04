@@ -5,6 +5,7 @@ public class User {
     private String uid;
     private String name;
     private String email;
+    private String fcmToken;
 
     public User() {
     }
@@ -37,5 +38,13 @@ public class User {
 
     public void setEmail(String email) {
         this.email = email;
+    }
+
+    public String getFcmToken() {
+        return fcmToken;
+    }
+
+    public void setFcmToken(String fcmToken) {
+        this.fcmToken = fcmToken;
     }
 }

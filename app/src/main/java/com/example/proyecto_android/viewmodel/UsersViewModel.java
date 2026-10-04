@@ -76,6 +76,34 @@ public class UsersViewModel extends ViewModel {
         }
     }
 
+    public void syncFcmToken(String currentUserId) {
+
+        if (currentUserId == null ||
+                currentUserId.trim().isEmpty()) {
+
+            errorMessage.setValue(
+                    "No se pudo registrar el dispositivo para notificaciones."
+            );
+
+            return;
+        }
+
+        userRepository.syncFcmToken(
+                currentUserId,
+                new UserRepository.OperationCallback() {
+
+                    @Override
+                    public void onSuccess() {
+                        // Token guardado correctamente
+                    }
+
+                    @Override
+                    public void onError(String message) {
+                        errorMessage.setValue(message);
+                    }
+                }
+        );
+    }
     @Override
     protected void onCleared() {
         super.onCleared();

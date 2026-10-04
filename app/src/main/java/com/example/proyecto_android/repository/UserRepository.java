@@ -4,7 +4,10 @@ import com.example.proyecto_android.model.User;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.ListenerRegistration;
+import com.google.firebase.firestore.SetOptions;
+import com.google.firebase.messaging.FirebaseMessaging;
 
+import java.util.Collections;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -75,6 +78,60 @@ public class UserRepository {
     public interface UsersListener {
 
         void onUsersChanged(List<User> users);
+
+        void onError(String message);
+    }
+    public void syncFcmToken(
+            String userId,
+            OperationCallback callback
+    ) {
+
+        FirebaseMessaging.getInstance()
+                .getToken()
+                .addOnSuccessListener(token -> {
+
+                    saveFcmToken(
+                            userId,
+                            token,
+                            callback
+                    );
+                })
+                .addOnFailureListener(exception -> {
+
+                    callback.onError(
+                            exception.getMessage()
+                    );
+                });
+    }
+
+    public void saveFcmToken(
+            String userId,
+            String token,
+            OperationCallback callback
+    ) {
+
+        firestore.collection("users")
+                .document(userId)
+                .set(
+                        Collections.singletonMap(
+                                "fcmToken",
+                                token
+                        ),
+                        SetOptions.merge()
+                )
+                .addOnSuccessListener(unused ->
+                        callback.onSuccess()
+                )
+                .addOnFailureListener(exception ->
+                        callback.onError(
+                                exception.getMessage()
+                        )
+                );
+    }
+
+    public interface OperationCallback {
+
+        void onSuccess();
 
         void onError(String message);
     }
