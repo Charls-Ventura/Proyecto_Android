@@ -35,11 +35,21 @@ public class RegisterActivity extends AppCompatActivity {
         authViewModel = new ViewModelProvider(this).get(AuthViewModel.class);
 
         btnRegister.setOnClickListener(v -> {
-            String name = editRegisterName.getText().toString();
-            String email = editRegisterEmail.getText().toString();
-            String password = editRegisterPassword.getText().toString();
 
-            authViewModel.register(name, email, password);
+            String name =
+                    editRegisterName.getText().toString();
+
+            String email =
+                    editRegisterEmail.getText().toString();
+
+            String password =
+                    editRegisterPassword.getText().toString();
+
+            authViewModel.register(
+                    name,
+                    email,
+                    password
+            );
         });
 
         authViewModel.getSuccessMessage().observe(this, message -> {

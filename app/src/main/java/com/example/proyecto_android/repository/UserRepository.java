@@ -1,9 +1,15 @@
 package com.example.proyecto_android.repository;
 
 import com.example.proyecto_android.model.User;
+import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.ListenerRegistration;
+import com.google.firebase.firestore.SetOptions;
+import com.google.firebase.messaging.FirebaseMessaging;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 
 public class UserRepository {
@@ -14,40 +20,202 @@ public class UserRepository {
         firestore = FirebaseFirestore.getInstance();
     }
 
-    public void saveUser(User user, UserCallback callback) {
-        firestore.collection("users")
-                .document(user.getUid())
-                .set(user)
-                .addOnSuccessListener(unused -> callback.onSuccess())
-                .addOnFailureListener(e -> callback.onError(e.getMessage()));
-    }
+    public ListenerRegistration listenForUsers(
+            String currentUserId,
+            UsersListener listener
+    ) {
 
-    public void getUsers(String currentUserId, UsersCallback callback) {
-        firestore.collection("users")
-                .get()
-                .addOnSuccessListener(queryDocumentSnapshots -> {
+        return firestore.collection("users")
+                .addSnapshotListener((snapshot, error) -> {
+
+                    if (error != null) {
+                        listener.onError(error.getMessage());
+                        return;
+                    }
+
+                    if (snapshot == null) {
+                        return;
+                    }
 
                     List<User> users = new ArrayList<>();
 
-                    for (User user : queryDocumentSnapshots.toObjects(User.class)) {
+                    for (DocumentSnapshot document : snapshot.getDocuments()) {
 
-                        if (!user.getUid().equals(currentUserId)) {
-                            users.add(user);
+                        User user = document.toObject(User.class);
+
+                        if (user == null) {
+                            continue;
                         }
+
+                        String userId = document.getId();
+                        user.setUid(userId);
+
+                        if (userId.equals(currentUserId)) {
+                            continue;
+                        }
+
+                        users.add(user);
                     }
+
+                    users.sort(
+                            Comparator.comparing(user -> {
+
+                                String name = user.getName();
+
+                                if (name == null) {
+                                    return "";
+                                }
+
+                                return name.toLowerCase();
+                            })
+                    );
+
+                    listener.onUsersChanged(users);
+                });
+    }
+
+    public void saveUser(
+            User user,
+            UserCallback callback
+    ) {
+
+        firestore.collection("users")
+                .document(user.getUid())
+                .set(user)
+                .addOnSuccessListener(unused ->
+                        callback.onSuccess()
+                )
+                .addOnFailureListener(exception ->
+                        callback.onError(
+                                exception.getMessage()
+                        )
+                );
+    }
+
+    public void getUsers(
+            String currentUserId,
+            UsersCallback callback
+    ) {
+
+        firestore.collection("users")
+                .get()
+                .addOnSuccessListener(snapshot -> {
+
+                    List<User> users = new ArrayList<>();
+
+                    for (DocumentSnapshot document :
+                            snapshot.getDocuments()) {
+
+                        User user =
+                                document.toObject(User.class);
+
+                        if (user == null) {
+                            continue;
+                        }
+
+                        String userId = document.getId();
+                        user.setUid(userId);
+
+                        if (userId.equals(currentUserId)) {
+                            continue;
+                        }
+
+                        users.add(user);
+                    }
+
+                    users.sort(
+                            Comparator.comparing(user -> {
+
+                                String name = user.getName();
+
+                                if (name == null) {
+                                    return "";
+                                }
+
+                                return name.toLowerCase();
+                            })
+                    );
 
                     callback.onSuccess(users);
                 })
-                .addOnFailureListener(e -> callback.onError(e.getMessage()));
+                .addOnFailureListener(exception ->
+                        callback.onError(
+                                exception.getMessage()
+                        )
+                );
+    }
+
+    public void syncFcmToken(
+            String userId,
+            OperationCallback callback
+    ) {
+
+        FirebaseMessaging.getInstance()
+                .getToken()
+                .addOnSuccessListener(token ->
+                        saveFcmToken(
+                                userId,
+                                token,
+                                callback
+                        )
+                )
+                .addOnFailureListener(exception ->
+                        callback.onError(
+                                exception.getMessage()
+                        )
+                );
+    }
+
+    public void saveFcmToken(
+            String userId,
+            String token,
+            OperationCallback callback
+    ) {
+
+        firestore.collection("users")
+                .document(userId)
+                .set(
+                        Collections.singletonMap(
+                                "fcmToken",
+                                token
+                        ),
+                        SetOptions.merge()
+                )
+                .addOnSuccessListener(unused ->
+                        callback.onSuccess()
+                )
+                .addOnFailureListener(exception ->
+                        callback.onError(
+                                exception.getMessage()
+                        )
+                );
+    }
+
+    public interface UsersListener {
+
+        void onUsersChanged(List<User> users);
+
+        void onError(String message);
     }
 
     public interface UserCallback {
+
         void onSuccess();
+
         void onError(String message);
     }
 
     public interface UsersCallback {
+
         void onSuccess(List<User> users);
+
+        void onError(String message);
+    }
+
+    public interface OperationCallback {
+
+        void onSuccess();
+
         void onError(String message);
     }
 }
