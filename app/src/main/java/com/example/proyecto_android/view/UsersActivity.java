@@ -1,6 +1,9 @@
 package com.example.proyecto_android.view;
 
 import android.Manifest;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Build;
@@ -10,6 +13,7 @@ import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
+import androidx.core.app.NotificationCompat;
 import androidx.core.content.ContextCompat;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -17,6 +21,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.proyecto_android.R;
 import com.example.proyecto_android.adapter.UserAdapter;
+import com.example.proyecto_android.model.Message;
 import com.example.proyecto_android.model.User;
 import com.example.proyecto_android.viewmodel.AuthViewModel;
 import com.example.proyecto_android.viewmodel.UsersViewModel;
@@ -24,8 +29,12 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 
 public class UsersActivity extends AppCompatActivity {
+
+    private static final String CHANNEL_ID = "chat_messages";
 
     private RecyclerView recyclerUsers;
     private Button btnLogout;
@@ -37,9 +46,14 @@ public class UsersActivity extends AppCompatActivity {
 
     private String currentUserId;
 
+    private final Map<String, String> userNames =
+            new HashMap<>();
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+
         super.onCreate(savedInstanceState);
+
         setContentView(R.layout.activity_users);
 
         requestNotificationPermission();
@@ -73,10 +87,12 @@ public class UsersActivity extends AppCompatActivity {
         if (currentUser == null) {
 
             goToLogin();
+
             return false;
         }
 
-        currentUserId = currentUser.getUid();
+        currentUserId =
+                currentUser.getUid();
 
         return true;
     }
@@ -110,7 +126,23 @@ public class UsersActivity extends AppCompatActivity {
                 users -> {
 
                     if (users != null) {
+
                         userAdapter.updateUsers(users);
+
+                        userNames.clear();
+
+                        for (User user : users) {
+
+                            if (user.getUid() != null) {
+
+                                userNames.put(
+                                        user.getUid(),
+                                        user.getName() == null
+                                                ? "Usuario"
+                                                : user.getName()
+                                );
+                            }
+                        }
                     }
                 }
         );
@@ -132,7 +164,16 @@ public class UsersActivity extends AppCompatActivity {
                 }
         );
 
+        usersViewModel.getIncomingMessage().observe(
+                this,
+                this::showIncomingMessageNotification
+        );
+
         usersViewModel.startListeningForUsers(
+                currentUserId
+        );
+
+        usersViewModel.startListeningForIncomingMessages(
                 currentUserId
         );
 
@@ -199,7 +240,140 @@ public class UsersActivity extends AppCompatActivity {
         );
 
         startActivity(intent);
+
         finish();
+    }
+
+    private void showIncomingMessageNotification(
+            Message message) {
+
+        if (message == null ||
+                message.getSenderId() == null) {
+
+            return;
+        }
+
+        createNotificationChannel();
+
+        String senderName =
+                userNames.get(message.getSenderId());
+
+        if (senderName == null ||
+                senderName.trim().isEmpty()) {
+
+            senderName = "Usuario";
+        }
+
+        String body =
+                message.getText();
+
+        if (body == null ||
+                body.trim().isEmpty()) {
+
+            if (message.getImageBase64() != null &&
+                    !message.getImageBase64()
+                            .trim()
+                            .isEmpty()) {
+
+                body = "Te envió una imagen";
+
+            } else {
+
+                body = "Tienes un mensaje nuevo";
+            }
+        }
+
+        Intent intent =
+                new Intent(
+                        UsersActivity.this,
+                        ChatActivity.class
+                );
+
+        intent.putExtra(
+                ChatActivity.EXTRA_RECEIVER_ID,
+                message.getSenderId()
+        );
+
+        intent.putExtra(
+                ChatActivity.EXTRA_RECEIVER_NAME,
+                senderName
+        );
+
+        intent.addFlags(
+                Intent.FLAG_ACTIVITY_CLEAR_TOP
+        );
+
+        PendingIntent pendingIntent =
+                PendingIntent.getActivity(
+                        this,
+                        (int) System.currentTimeMillis(),
+                        intent,
+                        PendingIntent.FLAG_UPDATE_CURRENT |
+                                PendingIntent.FLAG_IMMUTABLE
+                );
+
+        NotificationCompat.Builder builder =
+                new NotificationCompat.Builder(
+                        this,
+                        CHANNEL_ID
+                )
+                        .setSmallIcon(
+                                android.R.drawable.ic_dialog_email
+                        )
+                        .setContentTitle(
+                                "Nuevo mensaje de " +
+                                        senderName
+                        )
+                        .setContentText(body)
+                        .setStyle(
+                                new NotificationCompat
+                                        .BigTextStyle()
+                                        .bigText(body)
+                        )
+                        .setPriority(
+                                NotificationCompat.PRIORITY_HIGH
+                        )
+                        .setCategory(
+                                NotificationCompat.CATEGORY_MESSAGE
+                        )
+                        .setAutoCancel(true)
+                        .setContentIntent(pendingIntent);
+
+        NotificationManager manager =
+                (NotificationManager)
+                        getSystemService(
+                                NOTIFICATION_SERVICE
+                        );
+
+        manager.notify(
+                (int) System.currentTimeMillis(),
+                builder.build()
+        );
+    }
+
+    private void createNotificationChannel() {
+
+        if (Build.VERSION.SDK_INT >=
+                Build.VERSION_CODES.O) {
+
+            NotificationChannel channel =
+                    new NotificationChannel(
+                            CHANNEL_ID,
+                            "Mensajes del chat",
+                            NotificationManager.IMPORTANCE_HIGH
+                    );
+
+            channel.setDescription(
+                    "Notificaciones de mensajes nuevos"
+            );
+
+            NotificationManager manager =
+                    getSystemService(
+                            NotificationManager.class
+                    );
+
+            manager.createNotificationChannel(channel);
+        }
     }
 
     private void requestNotificationPermission() {
